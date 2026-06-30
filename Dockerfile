@@ -1,14 +1,13 @@
-##########################################
-#         构建可执行二进制文件             #
-##########################################
-# 指定创建的基础镜像
-FROM alpine:latest as builder
+#############################
+#     设置公共的变量         #
+#############################
+ARG BASE_IMAGE_TAG=resolute
+FROM ubuntu:${BASE_IMAGE_TAG}
 
 # 作者描述信息
 LABEL org.opencontainers.image.authors="iflyelf" \
       org.opencontainers.image.vendor="iflyelf"
 
-# buildx 自动注入的目标架构 (amd64/arm64/arm/386), 用于按架构编译对应二进制
 ARG TARGETARCH
 ARG TARGETVARIANT
 
@@ -16,8 +15,20 @@ ARG TARGETVARIANT
 ARG TZ=Asia/Shanghai
 ENV TZ=$TZ
 # 语言设置
-ARG LANG=C.UTF-8
+ARG LANG=zh_CN.UTF-8
 ENV LANG=$LANG
+
+# 镜像变量
+ARG DOCKER_IMAGE=iflyelf/docker-proxy
+ENV DOCKER_IMAGE=$DOCKER_IMAGE
+ARG DOCKER_IMAGE_OS=ubuntu
+ENV DOCKER_IMAGE_OS=$DOCKER_IMAGE_OS
+ARG DOCKER_IMAGE_TAG=resolute
+ENV DOCKER_IMAGE_TAG=$DOCKER_IMAGE_TAG
+
+# 环境设置
+ARG DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=$DEBIAN_FRONTEND
 
 # GO环境变量
 ARG GO_VERSION=1.26.4
@@ -29,135 +40,111 @@ ENV GOPATH=$GOPATH
 # Go 模块代理(加速依赖下载, 国内构建必备; 海外可改为 https://proxy.golang.org,direct)
 ARG GOPROXY=https://goproxy.cn,direct
 ENV GOPROXY=$GOPROXY
-ENV PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 
-# 构建依赖
-ARG BUILD_DEPS="\
-      git \
-      wget \
-      curl \
-      tar \
-      make \
-      gcc \
-      musl-dev \
-      ca-certificates"
-ENV BUILD_DEPS=$BUILD_DEPS
-
-# ***** 安装依赖 *****
-RUN set -eux && \
-   # 修改源地址
-   sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
-   # 更新源地址并更新系统软件
-   apk update && apk upgrade && \
-   # 安装依赖包
-   apk add --no-cache --clean-protected $BUILD_DEPS && \
-   rm -rf /var/cache/apk/* && \
-   # 更新时区
-   ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime && \
-   # 更新时间
-   echo ${TZ} > /etc/timezone
-
-# ***** 安装 Go *****
-RUN set -eux && \
-    case "${TARGETARCH}" in \
-        amd64) GO_ARCH="amd64" ;; \
-        arm64) GO_ARCH="arm64" ;; \
-        arm)   GO_ARCH="armv6l" ;; \
-        386)   GO_ARCH="386" ;; \
-        *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
-    esac && \
-    wget --no-check-certificate -O /tmp/go.tar.gz \
-        "https://golang.google.cn/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz" && \
-    mkdir -p ${GOROOT} && \
-    tar -C ${GOROOT} --strip-components=1 -xzf /tmp/go.tar.gz && \
-    rm -f /tmp/go.tar.gz && \
-    go version
-
-# 工作目录
-WORKDIR /build
-
-# 复制源码
-COPY go.mod ./
-COPY *.go ./
-
-# ***** 编译可执行二进制文件 *****
-RUN set -eux && \
-    # 下载依赖
-    go mod download || true && \
-    # 交叉编译(静态链接)
-    CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
-    go build -ldflags="-s -w" -o /tmp/docker-proxy .
-
-
-
-# ##############################################################################
-
-##########################################
-#         构建基础镜像                    #
-##########################################
-#
-# 指定创建的基础镜像
-FROM ubuntu:resolute
-
-# 作者描述信息
-LABEL org.opencontainers.image.authors="iflyelf" \
-      org.opencontainers.image.vendor="iflyelf"
-
-# buildx 自动注入的目标架构 (amd64/arm64/arm/386)
-ARG TARGETARCH
-ARG TARGETVARIANT
-
-# 时区设置
-ARG TZ=Asia/Shanghai
-ENV TZ=$TZ
-# 语言设置
-ARG LANG=zh_CN.UTF-8
-ENV LANG=$LANG
-
-# 环境设置
-ARG DEBIAN_FRONTEND=noninteractive
-ENV DEBIAN_FRONTEND=$DEBIAN_FRONTEND
-
-# 镜像变量
-ARG DOCKER_IMAGE=iflyelf/docker-proxy
-ENV DOCKER_IMAGE=$DOCKER_IMAGE
-ARG DOCKER_IMAGE_OS=ubuntu
-ENV DOCKER_IMAGE_OS=$DOCKER_IMAGE_OS
-ARG DOCKER_IMAGE_TAG=resolute
-ENV DOCKER_IMAGE_TAG=$DOCKER_IMAGE_TAG
-
-# 工作目录
-ARG WORK_DIR=/app
-ENV WORK_DIR=$WORK_DIR
-
-# 安装依赖包
 ARG PKG_DEPS="\
+    zsh \
     bash \
+    bash-doc \
     bash-completion \
+    conntrack \
+    ipset \
+    ipvsadm \
     bind9-dnsutils \
     iproute2 \
     net-tools \
-    ncat \
-    vim \
+    iptables \
+    bridge-utils \
+    openvswitch-switch \
+    libseccomp2 \
+    nfs-common \
+    rsync \
+    socat \
+    psmisc \
+    procps \
+    sysstat \
+    firewalld \
+    chrony \
+    ntpsec-ntpdate \
+    tcpdump \
+    telnet \
+    lsof \
+    iftop \
+    htop \
+    nmap \
+    nmap-common \
     jq \
-    tzdata \
     curl \
     wget \
-    lsof \
-    iputils-ping \
-    telnet \
-    procps \
+    axel \
+    git \
+    vim \
+    tree \
+    unzip \
+    zip \
+    tar \
+    subversion \
+    lrzsz \
+    gcc \
+    g++ \
+    build-essential \
+    binutils \
+    autoconf \
+    automake \
+    libtool \
+    gettext \
+    autopoint \
+    asciidoc \
+    gawk \
+    patch \
+    flex \
+    texinfo \
+    device-tree-compiler \
+    zlib1g-dev \
+    libjpeg-dev \
+    libelf-dev \
+    libssl-dev \
+    openssl \
+    libffi-dev \
+    libglib2.0-dev \
+    xmlto \
+    libncurses-dev \
+    locate \
+    lvm2 \
+    rsyslog \
     ca-certificates \
-    locales"
+    gnupg2 \
+    debsums \
+    locales \
+    tzdata \
+    fonts-droid-fallback \
+    fonts-wqy-zenhei \
+    fonts-wqy-microhei \
+    fonts-arphic-ukai \
+    fonts-arphic-uming \
+    language-pack-zh-hans \
+    numactl \
+    xz-utils \
+    libaio-dev \
+    python3 \
+    python3-dev \
+    python3-pip \
+    python3-yaml \
+    python3-venv \
+    python-is-python3 \
+    supervisor \
+    tini \
+    sshpass \
+    iputils-ping \
+    ncat \
+    upx-ucl \
+    libxml2-dev \
+    libxslt1-dev \
+    cargo \
+    rustc \
+    sudo \
+    npm \
+    uglifyjs"
 ENV PKG_DEPS=$PKG_DEPS
-
-# 拷贝 docker-proxy 二进制
-COPY --from=builder /tmp/docker-proxy /usr/local/bin/docker-proxy
-
-# 拷贝配置和文档
-COPY ["./deploy", "/app/deploy"]
-COPY ["./config.example.json", "/app/config.example.json"]
-COPY ["./README.md", "/app/README.md"]
 
 # ***** 安装依赖 *****
 RUN set -eux && \
@@ -170,6 +157,11 @@ RUN set -eux && \
    DEBIAN_FRONTEND=noninteractive apt-get update -qqy && apt-get upgrade -qqy && \
    # 安装依赖包
    DEBIAN_FRONTEND=noninteractive apt-get install -qqy --no-install-recommends $PKG_DEPS --option=Dpkg::Options::=--force-confdef && \
+   # multilib/i386 交叉编译包仅 amd64 架构提供, 其他架构跳过
+   if [ "${TARGETARCH}" = "amd64" ]; then \
+       DEBIAN_FRONTEND=noninteractive apt-get install -qqy --no-install-recommends \
+           gcc-multilib g++-multilib libc6-dev-i386 --option=Dpkg::Options::=--force-confdef ; \
+   fi && \
    DEBIAN_FRONTEND=noninteractive apt-get -qqy --no-install-recommends autoremove --purge && \
    DEBIAN_FRONTEND=noninteractive apt-get -qqy --no-install-recommends autoclean && \
    rm -rf /var/lib/apt/lists/* && \
@@ -177,23 +169,104 @@ RUN set -eux && \
    ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime && \
    # 更新时间
    echo ${TZ} > /etc/timezone && \
-   # 配置中文环境
+   # 更改为zsh
+   sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true && \
+   sed -i -e "s/bin\/ash/bin\/zsh/" /etc/passwd && \
+   # vim 默认配置文件存在时才关闭 mouse(不同版本路径不同, 用 find 定位)
+   find /usr/share/vim -name defaults.vim -exec sed -i -e 's/mouse=/mouse-=/g' {} + && \
    locale-gen zh_CN.UTF-8 && localedef -f UTF-8 -i zh_CN zh_CN.UTF-8 && locale-gen
 
-# ***** 检查依赖并授权 *****
+# ***** 安装 Node.js 最新 LTS（每次构建时安装当前最新版本）*****
+# 使用 n 在构建时获取最新 LTS；若需最新 Current 可改为 n latest
 RUN set -eux && \
-    # 创建用户和用户组
-    addgroup --system --quiet docker-proxy && \
-    adduser --quiet --system --disabled-login --ingroup docker-proxy --home ${WORK_DIR} --no-create-home docker-proxy && \
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+   DEBIAN_FRONTEND=noninteractive apt-get update -qqy && \
+   DEBIAN_FRONTEND=noninteractive apt-get install -qqy --no-install-recommends nodejs && \
+   npm config set registry https://registry.npmmirror.com && \
+   npm install -g n && \
+   n lts && \
+   npm install -g wrangler && \
+   rm -rf /var/lib/apt/lists/* /tmp/*
+
+# ***** 安装 python3 版本 *****
+RUN set -eux && \
+    python3 -m pip config set global.break-system-packages true && \
+    pip3 config set global.index-url http://mirrors.aliyun.com/pypi/simple/ && \
+    pip3 config set install.trusted-host mirrors.aliyun.com && \
+    python3 -m pip install --no-cache-dir --ignore-installed setuptools wheel cython && \
+    python3 -m pip install --no-cache-dir pycryptodome lxml cython beautifulsoup4 requests && \
+    rm -rf /tmp/* /var/lib/apt/lists/*
+
+# ***** 安装golang *****
+RUN set -eux && \
+    # 映射 buildx TARGETARCH 到 Go 官方包名 (arm -> armv6l, 其他直接用)
+    case "${TARGETARCH}" in \
+        amd64)   GO_ARCH=amd64   ;; \
+        arm64)   GO_ARCH=arm64   ;; \
+        arm)     GO_ARCH=armv6l  ;; \
+        386)     GO_ARCH=386     ;; \
+        *)       echo "不支持的架构: ${TARGETARCH}" && exit 1 ;; \
+    esac && \
+    echo "目标架构: ${TARGETARCH} => Go 包: linux-${GO_ARCH}" && \
+    wget --no-check-certificate https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz \
+         -O /tmp/go-${GO_ARCH}.tar.gz && \
+    tar xzf /tmp/go-${GO_ARCH}.tar.gz -C /opt && \
+    mkdir -pv ${GOPATH}/bin && \
+    # 仅删除 Go 压缩包, 不清空整个 /tmp (避免误删 DOWNLOAD_SRC=/tmp/src)
+    rm -f /tmp/go-${GO_ARCH}.tar.gz && \
+    # 软链 go 到 /usr/bin, 后续 RUN 层无需配 PATH
+    ln -sf /opt/go/bin/* /usr/bin/ && \
+    # 加载环境变量
+    export GOROOT=/opt/go && \
+    export GOPATH=/opt/golang && \
+    export PATH=$PATH:$GOROOT/bin:$GOPATH/bin && \
+    # 创建目录并清理文件
+    mkdir -pv $GOPATH/bin && rm -rf /tmp/* /var/lib/apt/lists/* && \
+    # 验证版本
+    go version
+
+# ##############################################################################
+
+# ***** 编译 docker-proxy *****
+# 工作目录
+ARG BUILD_DIR=/tmp/docker-proxy-src
+ENV BUILD_DIR=$BUILD_DIR
+
+# 复制源码
+COPY ["./go.mod", "${BUILD_DIR}/"]
+COPY ["./config.go", "${BUILD_DIR}/"]
+COPY ["./token.go", "${BUILD_DIR}/"]
+COPY ["./proxy.go", "${BUILD_DIR}/"]
+COPY ["./pages.go", "${BUILD_DIR}/"]
+COPY ["./main.go", "${BUILD_DIR}/"]
+
+RUN set -eux && \
+    export GOROOT=/opt/go && \
+    export GOPATH=/opt/golang && \
+    export PATH=$PATH:$GOROOT/bin:$GOPATH/bin && \
+    cd ${BUILD_DIR} && \
+    # 下载依赖
+    go mod download || true && \
+    # 交叉编译(静态链接)
+    CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
+    go build -ldflags="-s -w" -o /usr/local/bin/docker-proxy . && \
     # 授权
     chmod a+x /usr/local/bin/docker-proxy && \
+    # 创建用户和用户组
+    addgroup --system --quiet docker-proxy && \
+    adduser --quiet --system --disabled-login --ingroup docker-proxy --home /app --no-create-home docker-proxy && \
     # smoke test
-    # ##############################################################################
     docker-proxy --help || true && \
-    rm -rf /var/lib/apt/lists/* /tmp/*
+    # 清理源码和缓存
+    rm -rf ${BUILD_DIR} /tmp/* /var/lib/apt/lists/*
+
+# 拷贝配置和文档
+COPY ["./deploy", "/app/deploy"]
+COPY ["./config.example.json", "/app/config.example.json"]
+COPY ["./README.md", "/app/README.md"]
 
 # ***** 工作目录 *****
-WORKDIR ${WORK_DIR}
+WORKDIR /app
 
 # 暴露端口（根据默认配置）
 # docker.io=5000, quay.io=5001, gcr.io=5002, k8s.gcr.io=5003
