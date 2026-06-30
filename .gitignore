@@ -1,0 +1,5 @@
+/docker-proxy
+/docker-proxy-linux-amd64
+*.pid
+*.log
+/config.json

@@ -1,0 +1,5 @@
+server = "https://docker.io"
+
+[host."https://docker.xiaonuo.live"]
+  capabilities = ["pull", "resolve"]
+  skip_verify = false

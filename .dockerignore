@@ -1,0 +1,30 @@
+# 构建上下文排除文件
+
+# 编译产物
+docker-proxy
+docker-proxy-linux-amd64
+*.log
+*.pid
+
+# Git
+.git
+.gitignore
+
+# GitHub Actions
+.github
+
+# 文档（已在 Dockerfile 中单独 COPY）
+# README.md 保留用于镜像内文档
+
+# 测试文件
+*_test.go
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# 临时文件
+tmp/
+temp/

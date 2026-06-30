@@ -1,0 +1,5 @@
+server = "https://ghcr.io"
+
+[host."https://ghcr.nju.edu.cn"]
+  capabilities = ["pull", "resolve"]
+  skip_verify = false

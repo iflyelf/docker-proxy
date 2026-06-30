@@ -1,0 +1,5 @@
+server = "https://nvcr.io"
+
+[host."https://ngc.nju.edu.cn"]
+  capabilities = ["pull", "resolve"]
+  skip_verify = false

@@ -1,0 +1,5 @@
+server = "https://gcr.io"
+
+[host."https://gcr.iflyelf.com"]
+  capabilities = ["pull", "resolve"]
+  skip_verify = false

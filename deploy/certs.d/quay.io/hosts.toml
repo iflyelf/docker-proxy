@@ -1,0 +1,5 @@
+server = "https://quay.io"
+
+[host."https://quay.iflyelf.com"]
+  capabilities = ["pull", "resolve"]
+  skip_verify = false
