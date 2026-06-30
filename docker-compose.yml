@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  docker-proxy:
+    image: iflyelf/docker-proxy:latest
+    container_name: docker-proxy
+    restart: unless-stopped
+    
+    # 端口映射（根据需要调整）
+    ports:
+      - "5000:5000"  # docker.io
+      - "5001:5001"  # quay.io
+      - "5002:5002"  # gcr.io
+      - "5003:5003"  # k8s.gcr.io
+      - "5004:5004"  # registry.k8s.io
+      - "5005:5005"  # ghcr.io
+      - "5008:5008"  # nvcr.io
+    
+    # 环境变量
+    environment:
+      - TZ=Asia/Shanghai
+    
+    # 可选：挂载自定义配置
+    # volumes:
+    #   - ./config.json:/app/config.json:ro
+    
+    # 可选：使用配置文件
+    # command: ["/app/docker-proxy", "-config", "/app/config.json"]
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

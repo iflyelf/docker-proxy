@@ -53,19 +53,109 @@ Docker Client 收到镜像数据
 
 需要 Go 1.26+。
 
-```bash
-# 本机编译
-go build -o docker-proxy .
+### 本机编译
 
-# 交叉编译 Linux x86-64（用于部署到服务器）
+```bash
+go build -o docker-proxy .
+```
+
+### 交叉编译 Linux x86-64
+
+```bash
 bash build.sh
 # 或手动：
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o docker-proxy-linux-amd64 .
 ```
 
+### Docker 镜像
+
+**多架构镜像（推荐）**：
+
+```bash
+# 拉取预构建镜像（支持 linux/amd64, linux/arm64）
+docker pull iflyelf/docker-proxy:latest
+
+# 或本地构建多架构镜像
+docker buildx build --platform linux/amd64,linux/arm64 -t iflyelf/docker-proxy:latest .
+```
+
+**单架构快速构建**：
+
+```bash
+docker build -t docker-proxy:latest .
+```
+
 ## 🚀 部署
 
-### 1. 上传二进制
+### 方式 A：Docker 部署（推荐）
+
+#### 使用 docker run
+
+```bash
+docker run -d \
+  --name docker-proxy \
+  --restart unless-stopped \
+  -p 5000:5000 \
+  -p 5001:5001 \
+  -p 5002:5002 \
+  -p 5003:5003 \
+  -p 5004:5004 \
+  -p 5005:5005 \
+  -p 5008:5008 \
+  -e TZ=Asia/Shanghai \
+  iflyelf/docker-proxy:latest
+```
+
+#### 使用 docker-compose
+
+```bash
+# 下载 docker-compose.yml
+curl -O https://raw.githubusercontent.com/iflyelf/docker-proxy/main/docker-compose.yml
+
+# 启动
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止
+docker-compose down
+```
+
+#### 自定义配置
+
+```bash
+# 创建配置文件
+cat > config.json << 'EOF'
+{
+  "default_port": 5000,
+  "registries": [
+    {
+      "prefix": "docker.io",
+      "port": 5000,
+      "mirrors": [
+        {
+          "host": "https://your-mirror.example.com",
+          "capabilities": ["pull", "resolve"]
+        }
+      ]
+    }
+  ]
+}
+EOF
+
+# 挂载配置文件运行
+docker run -d \
+  --name docker-proxy \
+  -p 5000-5008:5000-5008 \
+  -v $(pwd)/config.json:/app/config.json:ro \
+  iflyelf/docker-proxy:latest \
+  /app/docker-proxy -config /app/config.json
+```
+
+### 方式 B：二进制部署
+
+#### 1. 上传二进制
 
 ```bash
 scp docker-proxy-linux-amd64 root@your-server:/opt/docker-proxy/docker-proxy
@@ -73,9 +163,9 @@ ssh root@your-server
 chmod +x /opt/docker-proxy/docker-proxy
 ```
 
-### 2. 运行方式
+#### 2. 运行方式
 
-#### 方式 A：前台运行（调试用）
+**前台运行（调试用）**
 
 ```bash
 cd /opt/docker-proxy
@@ -83,7 +173,7 @@ cd /opt/docker-proxy
 # 默认使用内置配置，监听端口 5000-5008
 ```
 
-#### 方式 B：后台守护进程
+**后台守护进程**
 
 ```bash
 ./docker-proxy -d
@@ -94,7 +184,7 @@ cd /opt/docker-proxy
 kill $(cat docker-proxy.pid)
 ```
 
-#### 方式 C：systemd 管理（推荐）
+**systemd 管理（推荐）**
 
 ```bash
 # 复制 service 文件
@@ -111,7 +201,7 @@ sudo systemctl status docker-proxy
 sudo journalctl -u docker-proxy -f
 ```
 
-### 3. 配置 Nginx 反向代理
+#### 3. 配置 Nginx 反向代理
 
 ```bash
 # 复制配置
@@ -127,7 +217,7 @@ nginx -t
 systemctl restart nginx
 ```
 
-### 4. DNS 配置
+#### 4. DNS 配置
 
 为以下域名添加 A 记录指向你的服务器 IP：
 
