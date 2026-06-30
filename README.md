@@ -1,5 +1,9 @@
 # Docker Registry Proxy
 
+[![Docker Build](https://github.com/iflyelf/docker-proxy/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/iflyelf/docker-proxy/actions/workflows/docker-publish.yml)
+[![Docker Pulls](https://img.shields.io/docker/pulls/iflyelf/docker-proxy)](https://hub.docker.com/r/iflyelf/docker-proxy)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 自建 Docker 镜像代理服务，支持 docker.io、gcr.io、k8s.gcr.io、registry.k8s.io、quay.io、ghcr.io、nvcr.io 等多个上游 registry，部署在可访问上游的海外服务器上，解决国内无法直接拉取 Docker 镜像的问题。
 
 ## ✨ 功能特性
