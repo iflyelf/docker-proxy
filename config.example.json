@@ -1,4 +1,5 @@
 {
+  "_comment": "docker-proxy 配置示例。host 字段必须指向真实上游 registry，不能是本服务自己的公开域名（避免代理回环导致 403）。",
   "default_port": 5000,
   "tls_cert": "",
   "tls_key": "",
@@ -9,7 +10,7 @@
       "port": 5000,
       "mirrors": [
         {
-          "host": "https://docker.xiaonuo.live",
+          "host": "https://registry-1.docker.io",
           "capabilities": ["pull", "resolve"],
           "skip_verify": false
         }
@@ -20,7 +21,7 @@
       "port": 5001,
       "mirrors": [
         {
-          "host": "https://quay.iflyelf.com",
+          "host": "https://quay.io",
           "capabilities": ["pull", "resolve"],
           "skip_verify": false
         }
@@ -31,7 +32,7 @@
       "port": 5002,
       "mirrors": [
         {
-          "host": "https://gcr.iflyelf.com",
+          "host": "https://gcr.io",
           "capabilities": ["pull", "resolve"],
           "skip_verify": false
         }
@@ -42,7 +43,7 @@
       "port": 5003,
       "mirrors": [
         {
-          "host": "https://k8s-gcr.iflyelf.com",
+          "host": "https://k8s.gcr.io",
           "capabilities": ["pull", "resolve"],
           "skip_verify": false
         }
@@ -53,7 +54,7 @@
       "port": 5004,
       "mirrors": [
         {
-          "host": "https://k8s.iflyelf.com",
+          "host": "https://registry.k8s.io",
           "capabilities": ["pull", "resolve"],
           "skip_verify": false
         }
@@ -64,7 +65,7 @@
       "port": 5005,
       "mirrors": [
         {
-          "host": "https://ghcr.nju.edu.cn",
+          "host": "https://ghcr.io",
           "capabilities": ["pull", "resolve"],
           "skip_verify": false
         }
@@ -75,7 +76,7 @@
       "port": 5008,
       "mirrors": [
         {
-          "host": "https://ngc.nju.edu.cn",
+          "host": "https://nvcr.io",
           "capabilities": ["pull", "resolve"],
           "skip_verify": false
         }

@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -267,13 +268,30 @@ func (h *ProxyHandler) handleV2(w http.ResponseWriter, r *http.Request) {
 
 	mirror := h.registry.Mirrors[0]
 	target := mirror.Host + path
-	if r.URL.RawQuery != "" {
-		target += "?" + r.URL.RawQuery
+
+	// 剥离 containerd 注入的 ns 参数（真实上游 registry 不识别该参数）
+	if rawQuery := stripNsParam(r.URL.RawQuery); rawQuery != "" {
+		target += "?" + rawQuery
 	}
 
 	// 尝试无 token 请求，如果 401 则获取 token 重试
 	clientAuth := r.Header.Get("Authorization")
 	h.proxyWithAuth(w, r, target, "", clientAuth)
+}
+
+// stripNsParam 移除 containerd hosts.toml 注入的 ns 查询参数
+// containerd 会在请求镜像源时附加 ?ns=registry.k8s.io 告知原始 registry，
+// 但真实上游（registry.k8s.io 等）不识别该参数，需要剥离。
+func stripNsParam(rawQuery string) string {
+	if rawQuery == "" {
+		return ""
+	}
+	values, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		return rawQuery
+	}
+	values.Del("ns")
+	return values.Encode()
 }
 
 // proxyWithAuth 转发请求，如果 401 则自动获取 token 并重试一次

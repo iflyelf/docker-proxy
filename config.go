@@ -36,56 +36,56 @@ type Config struct {
 var defaultConfig = Config{
 	DefaultPort: 5000,
 	Registries: []RegistryConfig{
-		{
-			Prefix: "docker.io",
-			Port:   5000,
-			Mirrors: []Mirror{
-				{
-					Host:         "https://docker.xiaonuo.live",
-					Capabilities: []string{"pull", "resolve"},
-					SkipVerify:   false,
-				},
+	{
+		Prefix: "docker.io",
+		Port:   5000,
+		Mirrors: []Mirror{
+			{
+				Host:         "https://registry-1.docker.io",
+				Capabilities: []string{"pull", "resolve"},
+				SkipVerify:   false,
 			},
 		},
-		{
-			Prefix: "gcr.io",
-			Port:   5002,
-			Mirrors: []Mirror{
-				{
-					Host:         "https://gcr.iflyelf.com",
-					Capabilities: []string{"pull", "resolve"},
-					SkipVerify:   false,
-				},
+	},
+	{
+		Prefix: "gcr.io",
+		Port:   5002,
+		Mirrors: []Mirror{
+			{
+				Host:         "https://gcr.io",
+				Capabilities: []string{"pull", "resolve"},
+				SkipVerify:   false,
 			},
 		},
-		{
-			Prefix: "k8s.gcr.io",
-			Port:   5003,
-			Mirrors: []Mirror{
-				{
-					Host:         "https://k8s-gcr.iflyelf.com",
-					Capabilities: []string{"pull", "resolve"},
-					SkipVerify:   false,
-				},
+	},
+	{
+		Prefix: "k8s.gcr.io",
+		Port:   5003,
+		Mirrors: []Mirror{
+			{
+				Host:         "https://k8s.gcr.io",
+				Capabilities: []string{"pull", "resolve"},
+				SkipVerify:   false,
 			},
 		},
-		{
-			Prefix: "registry.k8s.io",
-			Port:   5004,
-			Mirrors: []Mirror{
-				{
-					Host:         "https://k8s.iflyelf.com",
-					Capabilities: []string{"pull", "resolve"},
-					SkipVerify:   false,
-				},
+	},
+	{
+		Prefix: "registry.k8s.io",
+		Port:   5004,
+		Mirrors: []Mirror{
+			{
+				Host:         "https://registry.k8s.io",
+				Capabilities: []string{"pull", "resolve"},
+				SkipVerify:   false,
 			},
 		},
+	},
 		{
 			Prefix: "quay.io",
 			Port:   5001,
 			Mirrors: []Mirror{
 				{
-					Host:         "https://quay.iflyelf.com",
+					Host:         "https://quay.io",
 					Capabilities: []string{"pull", "resolve"},
 					SkipVerify:   false,
 				},
@@ -96,7 +96,7 @@ var defaultConfig = Config{
 			Port:   5005,
 			Mirrors: []Mirror{
 				{
-					Host:         "https://ghcr.nju.edu.cn",
+					Host:         "https://ghcr.io",
 					Capabilities: []string{"pull", "resolve"},
 					SkipVerify:   false,
 				},
@@ -107,7 +107,7 @@ var defaultConfig = Config{
 			Port:   5008,
 			Mirrors: []Mirror{
 				{
-					Host:         "https://ngc.nju.edu.cn",
+					Host:         "https://nvcr.io",
 					Capabilities: []string{"pull", "resolve"},
 					SkipVerify:   false,
 				},
